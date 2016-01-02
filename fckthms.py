@@ -2,6 +2,9 @@
 
 from collections import OrderedDict
 import re
+import sys
+
+from typing import Dict, List
 
 from PyQt4 import QtGui, QtCore
 from PyQt4.QtCore import Qt
@@ -11,10 +14,11 @@ from libsyntyche import common
 from canvas import Canvas
 
 class MainWindow(QtGui.QFrame):
-    def __init__(self, themefile, activation_event):
+    def __init__(self, themefile, styleconfig, activation_event):
         super().__init__()
         self.setWindowTitle('fckthms and not in a good way')
         self.themefile = themefile
+        validate_theme(themefile, styleconfig)
         activation_event.connect(self.reload_data)
         layout = QtGui.QHBoxLayout(self)
         common.kill_theming(layout)
@@ -25,8 +29,7 @@ class MainWindow(QtGui.QFrame):
         layout.addWidget(self.canvas, stretch=1)
         listlayout = QtGui.QVBoxLayout()
         common.kill_theming(listlayout)
-        listlayout.addWidget(self.listwidget, stretch=0)
-        listlayout.addStretch(stretch=1)
+        listlayout.addWidget(self.listwidget)
         layout.addLayout(listlayout)
         self.show()
 
@@ -36,21 +39,43 @@ class MainWindow(QtGui.QFrame):
         self.listwidget.update_list(paintstack)
 
 
-class ColorList(QtGui.QListWidget):
+def validate_theme(themefile: str, styleconfig: Dict[str, str]) -> None:
+    rx = r'color \S+ "[^"]+" "([^"]+)" \S+\s*'
+    with open(themefile) as f:
+        rawsettings = [re.fullmatch(rx, l).group(1) for l in f.readlines()
+                       if l.startswith('color')]
+    settings = set(rawsettings)
+    if len(rawsettings) != len(settings):
+        print('WARNING: some colors where defined twice')
+    styleconfig = common.read_json(styleconfig)
+    rest = settings - set(styleconfig.keys())
+    if rest:
+        print('ERROR: some colors wasn\'t found in the styleconfig:')
+        print(*rest, sep='\n')
+        sys.exit(1)
+
+class ColorList(QtGui.QScrollArea):
     request_repaint = QtCore.pyqtSignal()
 
     def __init__(self, parent, paintstack):
         super().__init__(parent)
-        self.itemEntered.connect(self.focus_item)
+        # self.itemEntered.connect(self.focus_item)
+        self.buttons = []
+        self.mainwidget = QtGui.QWidget(self)
+        self.layout = QtGui.QVBoxLayout(self.mainwidget)
+        common.kill_theming(self.layout)
+        self.layout.addStretch()
+        # self.mainwidget.setLayout(self.layout)
+        self.setWidget(self.mainwidget)
+        self.setWidgetResizable(True)
         self.update_list(paintstack)
-        self.setMouseTracking(True)
-        self.setSelectionMode(QtGui.QListWidget.NoSelection)
-        self.setStyleSheet('QListView {outline: 0;}')
-        self.selected = None
+        # self.setMouseTracking(True)
+        # self.setSelectionMode(QtGui.QListWidget.NoSelection)
+        self.setStyleSheet('QPushButton {outline: 0;}')
+        # self.selected = None
 
     def update_list(self, paintstack):
-        self.clear()
-        self.colors = OrderedDict()
+        self.colors = {}
         for cmd in paintstack:
             if cmd['name'] != 'color':
                 continue
@@ -60,17 +85,31 @@ class ColorList(QtGui.QListWidget):
                 'title': cmd['title'],
                 'setting': cmd['setting']
             }
-            self.addItem(cmd['title'])
-        self.setMaximumHeight(self.sizeHintForRow(0)*self.count() + 2*self.frameWidth())
+        while len(self.colors) > len(self.buttons):
+            b = QtGui.QPushButton('')
+            b.setFixedHeight(20)
+            b.setFlat(True)
+            b.setStyleSheet('QPushButton {outline: 0;}')
+            self.buttons.append(b)
+            self.layout.insertWidget(self.layout.count()-1,b)
+        while len(self.colors) < len(self.buttons):
+            b = self.buttons.pop()
+            self.layout.removeWidget(b)
+        for n, title in enumerate(sorted(x['title'] for x in self.colors.values())):
+            self.buttons[n].setText(title)
+        self.update()
+
+
+            # self.addItem(cmd['title'])
+        # self.setMaximumHeight(self.sizeHintForRow(0)*self.count() + 2*self.frameWidth())
 
     def get_color(self, index):
-        if self.selected == index:
-            return 'red'
-        else:
-            return self.colors[index]['color']
+        # if self.selected == index:
+        #     return 'red'
+        # else:
+        return self.colors[index]['color']
 
     def focus_item(self, item):
-        return
         i = self.row(item)
         self.selected = list(self.colors.keys())[i]
         self.request_repaint.emit()
@@ -80,7 +119,7 @@ class ColorList(QtGui.QListWidget):
         self.request_repaint.emit()
 
 
-def generate_paintstack(fname):
+def generate_paintstack(fname: str) -> List[Dict[str, str]]:
     """
     Extract all relevant lines (not empty non-comment) from the theme file
     and return a list of each line split in relevant chunks.
@@ -103,7 +142,7 @@ def generate_paintstack(fname):
         r'(?P<name>color) (?P<id>\S+) "(?P<title>{string})" "(?P<setting>{string})" (?P<color>{color})'
     ]
 
-    out = []
+    out = [] # type: List[Dict[str, str]]
     for l in lines:
         for rx in regexes:
             match = re.fullmatch(rx.format(**options), l)
@@ -115,14 +154,15 @@ def generate_paintstack(fname):
     return out
 
 
-def main():
+def main() -> None:
     import argparse, os.path, sys
     parser = argparse.ArgumentParser()
-    def valid_file(fname):
+    def valid_file(fname: str) -> str:
         if os.path.isfile(fname):
             return fname
         parser.error('File does not exist: {}'.format(fname))
-    parser.add_argument('file', type=valid_file)
+    parser.add_argument('theme', type=valid_file)
+    parser.add_argument('styleconfig', type=valid_file)
     args = parser.parse_args()
     app = QtGui.QApplication([])
     class AppEventFilter(QtCore.QObject):
@@ -134,7 +174,7 @@ def main():
     app.event_filter = AppEventFilter()
     app.installEventFilter(app.event_filter)
 
-    window = MainWindow(args.file, app.event_filter.activation_event)
+    window = MainWindow(args.theme, args.styleconfig, app.event_filter.activation_event)
 
     app.setActiveWindow(window)
     sys.exit(app.exec_())
