@@ -1,0 +1,31 @@
+color marginbg "Margin background" "margin background" #181818
+fill marginbg 0 0 100% 100%
+
+color border "Document border" "document border color" black
+fill border 50%-502 0 2 100%
+fill border 50%+300 0 2 100%
+
+color bg "Document background" "document background" #222
+fill bg 50%-500 0 800 100%
+fill bg 100%-200 0 200 100%
+
+color maintextfg "Document text color" "document text color" #ddd
+font "DejaVu Serif" 15 normal
+text maintextfg 50%-496 2 400 50 NW "Hamlet and the Unicorn were best of friends."
+
+color scrollbar "Scrollbar background" "scrollbar slider color" #111
+fill scrollbar 50%+285 0 15 100
+fill scrollbar 100%-15 0 15 60
+
+# Terminal
+color termborder "Terminal border" "terminal border color" #111
+fill termborder 0 100%-40 100% 40
+color terminputbg "Terminal input background" "terminal input background" #222
+fill terminputbg 0 100%-38 100% 18
+color termoutputbg "Terminal output background" "terminal output background" #191919
+fill termoutputbg 0 100%-18 100% 18
+color terminputfg "Terminal input text color" "terminal input text color" #ddd
+color termoutputfg "Terminal output text color" "terminal output text color" #ddd
+font "Monospace" 14 normal
+text terminputfg 2 100%-38 200 18 W "ft tag1, tag2"
+text termoutputfg 2 100%-18 200 18 W "Filters reset"

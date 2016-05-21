@@ -30,6 +30,16 @@ class MainWindow(QtGui.QFrame):
         listlayout = QtGui.QVBoxLayout()
         common.kill_theming(listlayout)
         listlayout.addWidget(self.listwidget)
+        highlightbtn = QtGui.QPushButton('Highlight items')
+        highlightbtn.setCheckable(True)
+        highlightbtn.toggled.connect(self.listwidget.set_highlight)
+        listlayout.addWidget(highlightbtn)
+        colorbtn = QtGui.QPushButton('Set color')
+        colorbtn.clicked.connect(self.listwidget.set_color)
+        listlayout.addWidget(colorbtn)
+        resetbtn = QtGui.QPushButton('Reset color')
+        resetbtn.clicked.connect(self.listwidget.reset_color)
+        listlayout.addWidget(resetbtn)
         layout.addLayout(listlayout)
         self.show()
 
@@ -54,60 +64,105 @@ def validate_theme(themefile: str, styleconfig: Dict[str, str]) -> None:
         print(*rest, sep='\n')
         sys.exit(1)
 
-class ColorList(QtGui.QScrollArea):
+
+class ColorList(QtGui.QListWidget):
     request_repaint = QtCore.pyqtSignal()
 
     def __init__(self, parent, paintstack):
         super().__init__(parent)
+        self.highlight = False
+        self.colors = None
+        self.itemSelectionChanged.connect(self.request_repaint.emit)
         # self.itemEntered.connect(self.focus_item)
-        self.buttons = []
-        self.mainwidget = QtGui.QWidget(self)
-        self.layout = QtGui.QVBoxLayout(self.mainwidget)
-        common.kill_theming(self.layout)
-        self.layout.addStretch()
+        #self.buttons = []
+        #self.mainwidget = QtGui.QWidget(self)
+        #self.layout = QtGui.QVBoxLayout(self.mainwidget)
+        #common.kill_theming(self.layout)
+        #self.layout.addStretch()
         # self.mainwidget.setLayout(self.layout)
-        self.setWidget(self.mainwidget)
-        self.setWidgetResizable(True)
+        #self.setWidget(self.mainwidget)
+        #self.setWidgetResizable(True)
         self.update_list(paintstack)
         # self.setMouseTracking(True)
-        # self.setSelectionMode(QtGui.QListWidget.NoSelection)
-        self.setStyleSheet('QPushButton {outline: 0;}')
+        self.setSelectionMode(QtGui.QListWidget.ExtendedSelection)
+        #self.setStyleSheet('QPushButton {outline: 0;}')
         # self.selected = None
 
     def update_list(self, paintstack):
-        self.colors = {}
+        oldcolors = self.colors
+        self.colors = OrderedDict()
+        n = 0
         for cmd in paintstack:
             if cmd['name'] != 'color':
                 continue
             self.colors[cmd['id']] = {
+                'num': n, # UGLY PIECE OF SHIT
                 'def color': cmd['color'],
-                'color': cmd['color'],
+                'color': oldcolors[cmd['id']]['color'] if oldcolors is not None else cmd['color'],
                 'title': cmd['title'],
-                'setting': cmd['setting']
+                'setting': cmd['setting'],
             }
-        while len(self.colors) > len(self.buttons):
-            b = QtGui.QPushButton('')
-            b.setFixedHeight(20)
-            b.setFlat(True)
-            b.setStyleSheet('QPushButton {outline: 0;}')
-            self.buttons.append(b)
-            self.layout.insertWidget(self.layout.count()-1,b)
-        while len(self.colors) < len(self.buttons):
-            b = self.buttons.pop()
-            self.layout.removeWidget(b)
-        for n, title in enumerate(sorted(x['title'] for x in self.colors.values())):
-            self.buttons[n].setText(title)
+            n += 1 # need to do this b/c the continue part
+        self.clear()
+        self.addItems([x['title'] for x in self.colors.values()])
+        #while len(self.colors) > len(self.buttons):
+        #    b = QtGui.QPushButton('')
+        #    b.setFixedHeight(20)
+        #    b.setFlat(True)
+        #    b.setStyleSheet('QPushButton {outline: 0;}')
+        #    self.buttons.append(b)
+        #    self.layout.insertWidget(self.layout.count()-1,b)
+        #while len(self.colors) < len(self.buttons):
+        #    b = self.buttons.pop()
+        #    self.layout.removeWidget(b)
+        #for n, title in enumerate(sorted(x['title'] for x in self.colors.values())):
+        #    self.buttons[n].setText(title)
         self.update()
-
 
             # self.addItem(cmd['title'])
         # self.setMaximumHeight(self.sizeHintForRow(0)*self.count() + 2*self.frameWidth())
 
-    def get_color(self, index):
+    def set_highlight(self, checked):
+        self.highlight = checked
+        self.request_repaint.emit()
+
+    def set_color(self, _):
+        rows = self.selectionModel().selectedRows()
+        if not rows:
+            return
+        if len(rows) == 1:
+            defcolor = QtGui.QColor(list(self.colors.values())[rows[0].row()]['color'])
+        else:
+            defcolor = Qt.white
+        color = QtGui.QColorDialog.getColor(defcolor)
+        if not color.isValid():
+            return
+        colorkeys = list(self.colors.keys())
+        for r in rows:
+            index = colorkeys[r.row()]
+            self.colors[index]['color'] = color.name()
+        self.request_repaint.emit()
+
+    def reset_color(self, _):
+        rows = self.selectionModel().selectedRows()
+        if not rows:
+            return
+        colorkeys = list(self.colors.keys())
+        for r in rows:
+            index = colorkeys[r.row()]
+            self.colors[index]['color'] = self.colors[index]['def color']
+        self.request_repaint.emit()
+
+    def get_color(self, index: str):
+        selmod = self.selectionModel()
+        if self.highlight and selmod.isRowSelected(self.colors[index]['num'], self.rootIndex()):
+        #print(self.selectedIndexes())
+        #if self.indexAt(QtCore.QPoint(0,index)) in self.selectedIndexes() and self.highlight:
+            return 'red'
         # if self.selected == index:
         #     return 'red'
-        # else:
-        return self.colors[index]['color']
+        else:
+            return self.colors[index]['color']
 
     def focus_item(self, item):
         i = self.row(item)

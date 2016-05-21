@@ -1,0 +1,39 @@
+
+# Main bg
+color marginbg "Margin background" "metaframe margin background" #162020
+fill marginbg 0 0 100% 100%
+# Main border
+color border "Border" "metaframe page border color" black
+fill border 50%-502 0 2 100%
+fill border 50%+500 0 2 100%
+# Main doc bg
+color pagebg "Main background" "metaframe background" #233
+fill pagebg 50%-500 0 1000 100%
+
+# Top bg
+color topbg "Top background" "metaframe tab bar background" #122
+fill topbg 0 0 100% 74
+# Top border
+fill border 0 74 100% 2
+
+# Tabs
+color tabbg "Tab background" "metaframe selected tab background" #333
+fill tabbg 50%-628 44 314 30
+color seltabbg "Active tab background" "metaframe tab background" #0a1515
+fill seltabbg 50%-314 44 942 30
+
+# Top text
+color tabfg "Tab/title text color" "metaframe tab color" #ddd
+font "Sans-serif" 20 underline|bold
+text tabfg 50%-200 0 400 44 C "Hamlet and the Unicorn"
+
+# Tabs
+font "Sans-serif" 12 normal
+text tabfg 50%-628 44 314 30 C "About"
+text tabfg 50%-314 44 314 30 C "Characters"
+text tabfg 50% 44 314 30 C "Dump"
+text tabfg 50%+314 44 314 30 C "Storyline"
+
+# Tab counter
+font "Sans-serif" 12 italic|bold
+text tabfg 100%-30 44 30 30 C "1/4"

@@ -1,0 +1,63 @@
+# Main bg
+color mainbg "Background" "index background" #233
+fill mainbg 0 0 100% 100%
+
+# Scrollbar
+color scrollbar "Scrollbar" "scrollbar index slider color" #111c1c
+fill scrollbar 100%-15 0 15 100
+
+# Entry separator
+color hr "Entry separator line" "index horizontal line color" black
+fill hr 18 57 100%-51 1
+
+# Entry index number
+color entryid "Entry id number" "index entry id color" #677
+font "Serif" 11 italic
+text entryid 0 0 22 38 C "0"
+text entryid 0 60 22 38 C "1"
+
+# Entry wordcount
+color entrylength "Entry wordcount" "index entry length color" #677
+font "Serif" 13 italic
+text entryid 196+16 0 80 38 W "(16,119)"
+text entryid 142+16 60 80 38 W "(472)"
+
+# Entry tags
+color entrytagbg "Entry tag background" "index entry tag default background" #677
+color entrytagfg "Entry tag text color" "index entry tag color" #011
+font "Monospace" 11 normal
+fill entrytagbg 280 11 39 17
+text entrytagfg 280 11 39 17 C "angst"
+fill entrytagbg 329 11 60 17
+text entrytagfg 329 11 60 17 C "complete"
+fill entrytagbg 399 11 46 17
+text entrytagfg 399 11 46 17 C "horror"
+fill entrytagbg 207 71 81 17
+text entrytagfg 207 71 81 17 C "not started"
+
+# Entry title
+color entrytitle "Entry title" "index entry title color" #cdd
+font "Serif" 14 normal
+text entrytitle 26 10 400 50 NW "Hamlet and the Unicorn"
+text entrytitle 26 70 400 50 NW "Super Fun Story"
+
+# Entry description
+color entrydesc "Entry description" "index entry description color" #899
+color entrynodesc "Empty entry description" "index entry empty description color" #d96
+font "Serif" 13 normal
+text entrydesc 29 33 600 50 NW "The riveting tale about Hamlet and his amazing unicorn."
+font "Serif" 13 italic
+text entrynodesc 29 93 200 50 NW "[no desc]"
+
+# Terminal
+color termborder "Terminal border" "terminal border color" #111
+fill termborder 0 100%-40 100% 40
+color terminputbg "Terminal input background" "terminal input background" #222
+fill terminputbg 0 100%-38 100% 18
+color termoutputbg "Terminal output background" "terminal output background" #191919
+fill termoutputbg 0 100%-18 100% 18
+color terminputfg "Terminal input text color" "terminal input text color" #ddd
+color termoutputfg "Terminal output text color" "terminal output text color" #ddd
+font "Monospace" 14 normal
+text terminputfg 2 100%-38 200 18 W "ft tag1, tag2"
+text termoutputfg 2 100%-18 200 18 W "Filters reset"
